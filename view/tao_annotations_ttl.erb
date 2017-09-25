@@ -1,0 +1,9 @@
+<%# denotations -%>
+<% denotations.each do |d| -%>
+<%= d[:obj_uri] %> tao:denoted_by <%= d[:span_uri] %> ;
+	rdf:type <%= d[:cls_uri] %> .
+<% end -%>
+<%# relations -%>
+<% relations.each do |r| -%>
+<%= r[:subj_uri] %> <%= r[:pred_uri] %> <%= r[:obj_uri] %> .
+<% end -%>

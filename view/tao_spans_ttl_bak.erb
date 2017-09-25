@@ -1,0 +1,20 @@
+<%# spans -%>
+<% spans.each do |s| -%>
+<%= s[:span_uri] %> rdf:type tao:Text_span ;
+	tao:belongs_to <%= "<#{s[:source_uri]}>" %> ;
+	tao:begins_at <%= s[:begin] %> ;
+	tao:ends_at <%= s[:end] %> ;
+<% s[:precedings].each do |s| -%>
+	tao:follows <%= s[:span_uri] %> ;
+<% end -%>
+<% s[:followings].each do |s| -%>
+	tao:followed_by <%= s[:span_uri] %> ;
+<% end -%>
+<% s[:children].each do |s| -%>
+	tao:contains <%= s[:span_uri] %> ;
+<% end -%>
+<% if s.has_key?(:parent) -%>
+	tao:contained_in <%= s[:parent][:span_uri] %> ;
+<% end -%>
+	tao:has_text "<%= s[:text] %>" .
+<% end -%>

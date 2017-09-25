@@ -1,0 +1,10 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix tao: <http://pubannotation.org/ontology/tao.owl#> .
+<%# namespaces -%>
+<% namespaces.each_key do |p| -%>
+<% if p == '_base' -%>
+@base <%= "<#{namespaces[p]}>" %> .
+<% else -%>
+@prefix <%= p %>: <%= "<#{namespaces[p]}>" %> .
+<% end -%>
+<% end -%>
