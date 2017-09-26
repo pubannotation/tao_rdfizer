@@ -9,19 +9,14 @@ class TAO::RDFizer
   # if mode == nil then produces both
   def initialize(mode = nil)
   	@mode = mode
-		template_filename = unless mode.nil?
-			if mode == :annotations
-				'view/tao_annotations_ttl.erb'
-			elsif mode == :spans
-				'view/tao_spans_ttl.erb'
-			else
-				'view/tao_ttl.erb'
-			end
+		template = if !mode.nil? && mode == :spans
+			ERB_SPANS_TTL
 		else
-			'view/tao_ttl.erb'
+			ERB_ANNOTATIONS_TTL
 		end
-		@tao_ttl_erb = ERB.new(File.read(template_filename), nil, '-')
-		@prefix_ttl_erb = ERB.new(File.read("view/prefixes_ttl.erb"), nil, '-')
+
+		@tao_ttl_erb = ERB.new(template, nil, '-')
+		@prefix_ttl_erb = ERB.new(ERB_PREFIXES_TTL, nil, '-')
   end
 
 	def rdfize(annotations_col)
@@ -151,6 +146,8 @@ class TAO::RDFizer
 		ttl = @prefix_ttl_erb.result(binding) + @tao_ttl_erb.result(binding)
 	end
 
+	private
+
 	def include_parent?(spans, span)
 		# spans.each{|s| return true if (s[:begin] <= span[:begin] && s[:end] > span[:end]) || (s[:begin] < span[:begin] && s[:end] >= span[:end])}
 		spans.each{|s| return true if s[:begin] <= span[:begin] && s[:end] >= span[:end]}
@@ -180,4 +177,45 @@ class TAO::RDFizer
 			namespaces.has_key?('_base') ? "<#{clabel}>" : "prj:#{clabel}"
 		end
 	end
+
+	ERB_ANNOTATIONS_TTL = <<~HEREDOC
+		<% denotations.each do |d| -%>
+		<%= d[:obj_uri] %> tao:denoted_by <%= d[:span_uri] %> ;
+			rdf:type <%= d[:cls_uri] %> .
+		<% end -%>
+		<%# relations -%>
+		<% relations.each do |r| -%>
+		<%= r[:subj_uri] %> <%= r[:pred_uri] %> <%= r[:obj_uri] %> .
+		<% end -%>
+	HEREDOC
+
+	ERB_SPANS_TTL = <<~HEREDOC
+		<% spans.each do |s| -%>
+		<%= s[:span_uri] %> rdf:type tao:Text_span ;
+			tao:belongs_to <<%= s[:source_uri] %>> ;
+			tao:begins_at <%= s[:begin] %> ;
+			tao:ends_at <%= s[:end] %> ;
+		<% s[:precedings].each do |s| -%>
+			tao:follows <%= s[:span_uri] %> ;
+		<% end -%>
+		<% s[:children].each do |s| -%>
+			tao:contains <%= s[:span_uri] %> ;
+		<% end -%>
+			tao:has_text "<%= s[:text] %>" .
+		<% end -%>
+	HEREDOC
+
+	ERB_PREFIXES_TTL = <<~HEREDOC
+		@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+		@prefix tao: <http://pubannotation.org/ontology/tao.owl#> .
+		<%# namespaces -%>
+		<% namespaces.each_key do |p| -%>
+		<% if p == '_base' -%>
+		@base <<%= namespaces[p] %>> .
+		<% else -%>
+		@prefix <%= p %>: <<%= namespaces[p] %>> .
+		<% end -%>
+		<% end -%>
+	HEREDOC
+
 end

@@ -5,8 +5,8 @@ require 'json'
 begin
 	annotations = JSON.parse File.read(ARGV[0]), :symbolize_names => true
 	annotations = [annotations] unless annotations.class == Array
-	# mode = :annotations
-	mode = :spans
+	mode = :annotations
+	# mode = :spans
 	rdfizer = TAO::RDFizer.new(mode)
 	puts rdfizer.rdfize(annotations)
 rescue ArgumentError, IOError => e
