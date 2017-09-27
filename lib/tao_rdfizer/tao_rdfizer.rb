@@ -73,11 +73,14 @@ class TAO::RDFizer
 			unless @mode == :annotations
 				# collect spans
 				_spans = _denotations.map{|d| d[:span]}
-				position = 0
-				annotations[:text].scan(/[^\W]*\W/).each do |tok|
-					_spans << {:begin => position, :end => position + tok.index(/\W/)}
-					position += tok.length
-				end
+
+				# # collect virtual spans
+				# position = 0
+				# annotations[:text].scan(/[^\W]*\W/).each do |tok|
+				# 	_spans << {:begin => position, :end => position + tok.index(/\W/)}
+				# 	position += tok.length
+				# end
+
 				_spans.uniq!
 
 				# add_infomation

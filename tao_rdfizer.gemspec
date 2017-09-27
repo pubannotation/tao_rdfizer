@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'tao_rdfizer'
-  s.version     = '0.9.2'
+  s.version     = '0.9.3'
   s.summary     = 'A RDF statement generator for annotations in the PubAnnotation JSON format.'
   s.date        = Time.now.utc.strftime("%Y-%m-%d")
   s.description = "It uses TAO (text annotation ontology) for representation of annotations to text."
