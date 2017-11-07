@@ -2,11 +2,37 @@
 require 'tao_rdfizer'
 require 'json'
 
+mode = nil
+
+## command line option processing
+require 'optparse'
+optparse = OptionParser.new do |opts|
+  opts.banner = "Usage: tao_rdfizer [options] an_annotation_file.json"
+
+  opts.on('-a', '--annotations', 'rdfize only the annotations.') do
+    mode = :annotations
+  end
+
+  opts.on('-s', '--spans', 'rdfize only the spans.') do
+    mode = :spans
+  end
+
+  opts.on('-h', '--help', 'displays this screen.') do
+    puts opts
+    exit
+  end
+end
+
+optparse.parse!
+
+unless ARGV.length > 0
+	puts optparse.help 
+	exit
+end
+
 begin
 	annotations = JSON.parse File.read(ARGV[0]), :symbolize_names => true
 	annotations = [annotations] unless annotations.class == Array
-	mode = :annotations
-	# mode = :spans
 	rdfizer = TAO::RDFizer.new(mode)
 	puts rdfizer.rdfize(annotations)
 rescue ArgumentError, IOError => e
