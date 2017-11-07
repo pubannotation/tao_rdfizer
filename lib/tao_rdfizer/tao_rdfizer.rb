@@ -73,14 +73,6 @@ class TAO::RDFizer
 			unless @mode == :annotations
 				# collect spans
 				_spans = _denotations.map{|d| d[:span]}
-
-				# # collect virtual spans
-				# position = 0
-				# annotations[:text].scan(/[^\W]*\W/).each do |tok|
-				# 	_spans << {:begin => position, :end => position + tok.index(/\W/)}
-				# 	position += tok.length
-				# end
-
 				_spans.uniq!
 
 				# add_infomation
@@ -111,30 +103,21 @@ class TAO::RDFizer
 
 				# initilaize the index
 				(0 ... num).each do |i|
-					_spans[i][:followings] = []
 					_spans[i][:precedings] = []
-					_spans[i][:children] = []
 				end
 
 				(0 ... num).each do |i|
-					# index the embedded spans
+					# find the first following span
 					j = i + 1
-					while j < num && _spans[j][:begin] < _spans[i][:end]
-						unless include_parent?(_spans[i][:children], _spans[j])
-							_spans[i][:children] << _spans[j]
-							_spans[j][:parent] = _spans[i]
-						end
-						j += 1
-					end
+					j += 1 while j < num && _spans[j][:begin] < _spans[i][:end]
 
-					# find the following position
+					# find adjacent positions
 					fp = _spans[i][:end]
 					fp += 1 while fp < len && text[fp].match(/\s/)
 					next if fp == len
 
-					# index the following spans
+					# index adjacent spans
 					while j < num && _spans[j][:begin] == fp
-						_spans[i][:followings] << _spans[j]
 						_spans[j][:precedings] << _spans[i]
 						j += 1
 					end 
@@ -195,16 +178,13 @@ class TAO::RDFizer
 	ERB_SPANS_TTL = <<~HEREDOC
 		<% spans.each do |s| -%>
 		<%= s[:span_uri] %> rdf:type tao:Text_span ;
+			tao:has_text "<%= s[:text] %>" .
 			tao:belongs_to <<%= s[:source_uri] %>> ;
 			tao:begins_at <%= s[:begin] %> ;
 			tao:ends_at <%= s[:end] %> ;
 		<% s[:precedings].each do |s| -%>
 			tao:follows <%= s[:span_uri] %> ;
 		<% end -%>
-		<% s[:children].each do |s| -%>
-			tao:contains <%= s[:span_uri] %> ;
-		<% end -%>
-			tao:has_text "<%= s[:text] %>" .
 		<% end -%>
 	HEREDOC
 
