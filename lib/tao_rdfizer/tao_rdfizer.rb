@@ -104,12 +104,19 @@ class TAO::RDFizer
 				# initilaize the index
 				(0 ... num).each do |i|
 					_spans[i][:precedings] = []
+					_spans[i][:children] = []
 				end
 
 				(0 ... num).each do |i|
 					# find the first following span
 					j = i + 1
-					j += 1 while j < num && _spans[j][:begin] < _spans[i][:end]
+
+					while j < num && _spans[j][:begin] < _spans[i][:end]
+						unless include_parent?(_spans[i][:children], _spans[j])
+							_spans[i][:children] << _spans[j]
+						end
+						j += 1
+					end
 
 					# find adjacent positions
 					fp = _spans[i][:end]
@@ -120,7 +127,7 @@ class TAO::RDFizer
 					while j < num && _spans[j][:begin] == fp
 						_spans[j][:precedings] << _spans[i]
 						j += 1
-					end 
+					end
 				end
 			end
 
@@ -184,6 +191,9 @@ class TAO::RDFizer
 			tao:ends_at <%= s[:end] %> ;
 		<% s[:precedings].each do |s| -%>
 			tao:follows <%= s[:span_uri] %> ;
+		<% end -%>
+		<% s[:children].each do |s| -%>
+			tao:contains <%= s[:span_uri] %> ;
 		<% end -%>
 		<% end -%>
 	HEREDOC
