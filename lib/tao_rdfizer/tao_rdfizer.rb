@@ -103,7 +103,7 @@ class TAO::RDFizer
 
 				# initilaize the index
 				(0 ... num).each do |i|
-					_spans[i][:precedings] = []
+					_spans[i][:followings] = []
 					_spans[i][:children] = []
 				end
 
@@ -125,7 +125,7 @@ class TAO::RDFizer
 
 					# index adjacent spans
 					while j < num && _spans[j][:begin] == fp
-						_spans[j][:precedings] << _spans[i]
+						_spans[i][:followings] << _spans[j]
 						j += 1
 					end
 				end
@@ -185,16 +185,16 @@ class TAO::RDFizer
 	ERB_SPANS_TTL = <<~HEREDOC
 		<% spans.each do |s| -%>
 		<%= s[:span_uri] %> rdf:type tao:Text_span ;
-			tao:has_text "<%= s[:text] %>" .
-			tao:belongs_to <<%= s[:source_uri] %>> ;
-			tao:begins_at <%= s[:begin] %> ;
-			tao:ends_at <%= s[:end] %> ;
-		<% s[:precedings].each do |s| -%>
-			tao:follows <%= s[:span_uri] %> ;
+		<% s[:followings].each do |s| -%>
+			tao:followed_by <%= s[:span_uri] %> ;
 		<% end -%>
 		<% s[:children].each do |s| -%>
 			tao:contains <%= s[:span_uri] %> ;
 		<% end -%>
+			tao:has_text "<%= s[:text] %>" ;
+			tao:belongs_to <<%= s[:source_uri] %>> ;
+			tao:begins_at <%= s[:begin] %> ;
+			tao:ends_at <%= s[:end] %> .
 		<% end -%>
 	HEREDOC
 
