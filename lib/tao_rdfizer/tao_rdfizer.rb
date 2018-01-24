@@ -22,13 +22,15 @@ class TAO::RDFizer
 	def rdfize(annotations_col)
 		# namespaces
 		namespaces = {}
+
 		anns = annotations_col.first
+		prefix_for_this = anns[:project].downcase.gsub(/ /, '_')
 		anns[:namespaces].each {|n| namespaces[n[:prefix]] = n[:uri]} unless anns[:namespaces].nil?
-		raise ArgumentError, "'prj' is a reserved prefix." if namespaces.has_key?('prj')
+		raise ArgumentError, "'#{prefix_for_this}' is a reserved prefix for this project." if namespaces.has_key?(prefix_for_this)
 
 		unless @mode ==:spans
 			project_uri = 'http://pubannotation.org/projects/' + anns[:project] unless @mode ==:spans
-			namespaces['prj'] = project_uri + '/' 
+			namespaces[prefix_for_this] = project_uri + '/'
 		end
 
 		denotations = []
@@ -59,15 +61,15 @@ class TAO::RDFizer
 			_denotations.each do |d|
 				span_uri = "<#{text_uri}/spans/#{d[:span][:begin]}-#{d[:span][:end]}>"
 				d[:span_uri] = span_uri
-				d[:obj_uri] = "prj:#{text_id}-#{d[:id]}"
-				d[:cls_uri] = find_uri(d[:obj], namespaces)
+				d[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{d[:id]}"
+				d[:cls_uri] = find_uri(d[:obj], namespaces, prefix_for_this)
 			end
 
 			# relations preprocessing
 			_relations.each do |r|
-				r[:subj_uri] = "prj:#{text_id}-#{r[:subj]}"
-				r[:obj_uri] = "prj:#{text_id}-#{r[:obj]}"
-				r[:pred_uri] = find_uri(r[:pred], namespaces)
+				r[:subj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:subj]}"
+				r[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:obj]}"
+				r[:pred_uri] = find_uri(r[:pred], namespaces, prefix_for_this)
 			end
 
 			unless @mode == :annotations
@@ -155,7 +157,7 @@ class TAO::RDFizer
 		return sourcedb, sourceid, divid
 	end
 
-	def find_uri (label, namespaces)
+	def find_uri (label, namespaces, prefix_for_this)
 		delimiter_position = label.index(':')
 		if !delimiter_position.nil? && namespaces.keys.include?(label[0...delimiter_position])
 			label
@@ -165,9 +167,9 @@ class TAO::RDFizer
 			clabel = if label.match(/^\W+$/)
 				'SYM'
 			else
-				label.sub(/^\W+/, '').sub(/\W+$/, '')
+				label.sub(/^\W+/, '').sub(/\W+$/, '').gsub(/ +/, '_')
 			end
-			namespaces.has_key?('_base') ? "<#{clabel}>" : "prj:#{clabel}"
+			namespaces.has_key?('_base') ? "<#{clabel}>" : "#{prefix_for_this}:#{clabel}"
 		end
 	end
 
