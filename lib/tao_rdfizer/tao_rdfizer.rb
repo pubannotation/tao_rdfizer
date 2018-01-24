@@ -24,12 +24,12 @@ class TAO::RDFizer
 		namespaces = {}
 
 		anns = annotations_col.first
-		prefix_for_this = anns[:project].downcase.gsub(/ /, '_')
 		anns[:namespaces].each {|n| namespaces[n[:prefix]] = n[:uri]} unless anns[:namespaces].nil?
-		raise ArgumentError, "'#{prefix_for_this}' is a reserved prefix for this project." if namespaces.has_key?(prefix_for_this)
 
 		unless @mode ==:spans
-			project_uri = 'http://pubannotation.org/projects/' + anns[:project] unless @mode ==:spans
+			prefix_for_this = anns[:project].downcase.gsub(/ /, '_')
+			raise ArgumentError, "'#{prefix_for_this}' is a reserved prefix for this project." if namespaces.has_key?(prefix_for_this)
+			project_uri = 'http://pubannotation.org/projects/' + anns[:project]
 			namespaces[prefix_for_this] = project_uri + '/'
 		end
 
@@ -193,7 +193,7 @@ class TAO::RDFizer
 		<% s[:children].each do |s| -%>
 			tao:contains <%= s[:span_uri] %> ;
 		<% end -%>
-			tao:has_text "<%= s[:text] %>" ;
+			tao:has_text <%= s[:text].dump %> ;
 			tao:belongs_to <<%= s[:source_uri] %>> ;
 			tao:begins_at <%= s[:begin] %> ;
 			tao:ends_at <%= s[:end] %> .
