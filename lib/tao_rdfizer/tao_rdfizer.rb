@@ -4,11 +4,11 @@ require 'erb'
 module TAO; end unless defined? TAO
 
 class TAO::RDFizer
-  # if mode == :spans then produces span descriptions
-  # if mode == :annotations then produces annotation descriptions
-  # if mode == nil then produces both
-  def initialize(mode = nil)
-  	@mode = mode
+	# if mode == :spans then produces span descriptions
+	# if mode == :annotations then produces annotation descriptions
+	# if mode == nil then produces both
+	def initialize(mode = nil)
+		@mode = mode
 		template = if !mode.nil? && mode == :spans
 			ERB_SPANS_TTL
 		else
@@ -17,7 +17,7 @@ class TAO::RDFizer
 
 		@tao_ttl_erb = ERB.new(template, nil, '-')
 		@prefix_ttl_erb = ERB.new(ERB_PREFIXES_TTL, nil, '-')
-  end
+	end
 
 	def rdfize(annotations_col)
 		# namespaces
@@ -57,19 +57,23 @@ class TAO::RDFizer
 				end
 			end
 
-			# denotations preprocessing
-			_denotations.each do |d|
-				span_uri = "<#{text_uri}/spans/#{d[:span][:begin]}-#{d[:span][:end]}>"
-				d[:span_uri] = span_uri
-				d[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{d[:id]}"
-				d[:cls_uri] = find_uri(d[:obj], namespaces, prefix_for_this)
-			end
+			begin
+				# denotations preprocessing
+				_denotations.each do |d|
+					span_uri = "<#{text_uri}/spans/#{d[:span][:begin]}-#{d[:span][:end]}>"
+					d[:span_uri] = span_uri
+					d[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{d[:id]}"
+					d[:cls_uri] = find_uri(d[:obj], namespaces, prefix_for_this)
+				end
 
-			# relations preprocessing
-			_relations.each do |r|
-				r[:subj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:subj]}"
-				r[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:obj]}"
-				r[:pred_uri] = find_uri(r[:pred], namespaces, prefix_for_this)
+				# relations preprocessing
+				_relations.each do |r|
+					r[:subj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:subj]}"
+					r[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:obj]}"
+					r[:pred_uri] = find_uri(r[:pred], namespaces, prefix_for_this)
+				end
+			rescue ArgumentError => e
+				raise ArgumentError, "[#{sourcedb}-#{sourceid}] " + e
 			end
 
 			unless @mode == :annotations
@@ -158,6 +162,7 @@ class TAO::RDFizer
 	end
 
 	def find_uri (label, namespaces, prefix_for_this)
+		raise ArgumentError, "A label including a whitespace character found: #{label}." if label.match(/\s/)
 		delimiter_position = label.index(':')
 		if !delimiter_position.nil? && namespaces.keys.include?(label[0...delimiter_position])
 			label
@@ -193,7 +198,7 @@ class TAO::RDFizer
 		<% s[:children].each do |s| -%>
 			tao:contains <%= s[:span_uri] %> ;
 		<% end -%>
-			tao:has_text <%= s[:text].dump %> ;
+			tao:has_text <%= s[:text].inspect %> ;
 			tao:belongs_to <<%= s[:source_uri] %>> ;
 			tao:begins_at <%= s[:begin] %> ;
 			tao:ends_at <%= s[:end] %> .
