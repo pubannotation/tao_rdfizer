@@ -165,16 +165,16 @@ class TAO::RDFizer
 		raise ArgumentError, "A label including a whitespace character found: #{label}." if label.match(/\s/)
 		delimiter_position = label.index(':')
 		if !delimiter_position.nil? && namespaces.keys.include?(label[0...delimiter_position])
-			label
+			label.gsub('(', '\(').gsub(')', '\)') # brackets have to be escaped
 		elsif label =~ %r[^https?://]
 			"<#{label}>"
 		else
 			clabel = if label.match(/^\W+$/)
 				'SYM'
 			else
-				label.sub(/^\W+/, '').sub(/\W+$/, '').gsub(/ +/, '_')
+				label.sub(/^\W+/, '').sub(/[^a-zA-Z0-9_)]+$/, '').gsub(/ +/, '_')
 			end
-			namespaces.has_key?('_base') ? "<#{clabel}>" : "#{prefix_for_this}:#{clabel}"
+			namespaces.has_key?('_base') ? "<#{clabel}>" : "#{prefix_for_this}:#{clabel.gsub('(', '\(').gsub(')', '\)')}"
 		end
 	end
 
