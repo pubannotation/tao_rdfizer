@@ -27,6 +27,7 @@ class TAO::RDFizer
 		anns[:namespaces].each {|n| namespaces[n[:prefix]] = n[:uri]} unless anns[:namespaces].nil?
 
 		unless @mode ==:spans
+			raise ArgumentError, "A project name has to be specified." unless anns.has_key?(:project)
 			prefix_for_this = anns[:project].downcase.gsub(/ /, '_')
 			raise ArgumentError, "'#{prefix_for_this}' is a reserved prefix for this project." if namespaces.has_key?(prefix_for_this)
 			project_uri = 'http://pubannotation.org/projects/' + anns[:project]
@@ -58,22 +59,34 @@ class TAO::RDFizer
 			end
 
 			begin
-				# denotations preprocessing
-				_denotations.each do |d|
-					span_uri = "<#{text_uri}/spans/#{d[:span][:begin]}-#{d[:span][:end]}>"
-					d[:span_uri] = span_uri
-					d[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{d[:id]}"
-					d[:cls_uri] = find_uri(d[:obj], namespaces, prefix_for_this)
-				end
+				if @mode == :annotations
+					# denotations preprocessing
+					_denotations.each do |d|
+						span_uri = "<#{text_uri}/spans/#{d[:span][:begin]}-#{d[:span][:end]}>"
+						d[:span_uri] = span_uri
+						d[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{d[:id]}"
+						d[:cls_uri] = find_uri(d[:obj], namespaces, prefix_for_this)
+					rescue ArgumentError => e
+						raise ArgumentError, "[#{sourcedb}-#{sourceid}-#{d[:id]}] " + e.message
+					end
 
-				# relations preprocessing
-				_relations.each do |r|
-					r[:subj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:subj]}"
-					r[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:obj]}"
-					r[:pred_uri] = find_uri(r[:pred], namespaces, prefix_for_this)
+					# relations preprocessing
+					_relations.each do |r|
+						r[:subj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:subj]}"
+						r[:obj_uri] = "#{prefix_for_this}:#{text_id}-#{r[:obj]}"
+						r[:pred_uri] = find_uri(r[:pred], namespaces, prefix_for_this)
+					rescue ArgumentError => e
+						raise ArgumentError, "[#{sourcedb}-#{sourceid}-#{r[:id]}] " + e.message
+					end
+				else
+					# denotations preprocessing
+					_denotations.each do |d|
+						span_uri = "<#{text_uri}/spans/#{d[:span][:begin]}-#{d[:span][:end]}>"
+						d[:span_uri] = span_uri
+					rescue ArgumentError => e
+						raise ArgumentError, "[#{sourcedb}-#{sourceid}-#{d[:id]}] " + e.message
+					end
 				end
-			rescue ArgumentError => e
-				raise ArgumentError, "[#{sourcedb}-#{sourceid}] " + e
 			end
 
 			unless @mode == :annotations
